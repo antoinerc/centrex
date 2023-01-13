@@ -2,6 +2,17 @@ defmodule Centrex.Listings do
   alias Centrex.Listings.Listing
   alias Centrex.Repo
 
+  import Ecto.Query, warn: false
+
+  def search_listings(address) do
+    like = "%#{address}%"
+    Repo.all(from l in Listing, where: ilike(l.address, ^like))
+  end
+
+  def get_listing(address) do
+    Repo.get(Listing, address)
+  end
+
   def track_listing(address, price, link, type) do
     %Listing{}
     |> Ecto.Changeset.cast(

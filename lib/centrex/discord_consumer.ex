@@ -65,16 +65,20 @@ defmodule Centrex.DiscordConsumer do
     [%{value: address}] = data.options
 
     response =
-      case ListingProcess.read(address) do
-        %Centrex.Listings.Listing{
-          address: address,
-          price_history: [current_price | past_price],
-          links_history: [link | _]
-        } ->
-          "**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+      case Listings.search_listings(address) do
+        [] ->
+          "No listing found"
 
-        _ ->
-          "No listing found with address #{address}"
+        listings ->
+          Enum.reduce(listings, "Found #{Enum.count(listings)} listings\n", fn
+            %{
+              address: address,
+              price_history: [current_price | past_prices],
+              links_history: [latest_link | _]
+            },
+            acc ->
+              "#{acc}**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_prices, &", #{&1}$")} \nLatest link: #{latest_link}\n"
+          end)
       end
 
     Api.create_interaction_response(interaction, %{type: 4, data: %{content: response}})
