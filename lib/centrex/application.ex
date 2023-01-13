@@ -15,9 +15,12 @@ defmodule Centrex.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Centrex.PubSub},
       # Start the Endpoint (http/https)
-      CentrexWeb.Endpoint
+      CentrexWeb.Endpoint,
       # Start a worker by calling: Centrex.Worker.start_link(arg)
       # {Centrex.Worker, arg}
+      Centrex.ListingRegistry.child_spec(),
+      Centrex.ListingSupervisor,
+      Centrex.DiscordConsumer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
