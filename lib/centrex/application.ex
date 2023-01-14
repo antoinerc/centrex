@@ -18,8 +18,6 @@ defmodule Centrex.Application do
       CentrexWeb.Endpoint,
       # Start a worker by calling: Centrex.Worker.start_link(arg)
       # {Centrex.Worker, arg}
-      Centrex.ListingRegistry.child_spec(),
-      Centrex.ListingSupervisor,
       Centrex.DiscordConsumer
     ]
 

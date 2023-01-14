@@ -5,7 +5,6 @@ defmodule Centrex.DiscordConsumer do
   alias Nostrum.Struct
   alias Centrex.Commands
   alias Centrex.Listings
-  alias Centrex.Listings.ListingProcess
 
   def start_link do
     Consumer.start_link(__MODULE__)
@@ -44,18 +43,34 @@ defmodule Centrex.DiscordConsumer do
     } = data
 
     response =
-      case ListingProcess.track(address, type, price, link) do
-        {:ok,
-         %Listings.Listing{price_history: [current_price | past_price], links_history: [link | _]}} ->
-          "**NEW LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+      case Listings.get_listing(address) do
+        %Listings.Listing{
+          address: ^address,
+          type: ^type,
+          price_history: [^price | past_price],
+          links_history: [^link | _]
+        } ->
+          "Found an existing listing for\n**#{address}**\nPrice history: **#{price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
 
-        {:no_change,
-         %Listings.Listing{price_history: [current_price | past_price], links_history: [link | _]}} ->
-          "Found an existing listing for\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+        %Listings.Listing{} = listing ->
+          {:ok,
+           %Listings.Listing{
+             address: address,
+             price_history: [current_price | past_price],
+             links_history: [link | _]
+           }} = Listings.update_listing(listing, price, link)
 
-        {:updated,
-         %Listings.Listing{price_history: [current_price | past_price], links_history: [link | _]}} ->
           "**UPDATED LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+
+        nil ->
+          {:ok,
+           %Listings.Listing{
+             address: address,
+             price_history: [current_price | past_price],
+             links_history: [link | _]
+           }} = Listings.track_listing(address, price, link, type)
+
+          "**NEW LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
       end
 
     Api.create_interaction_response(interaction, %{type: 4, data: %{content: response}})
@@ -65,16 +80,20 @@ defmodule Centrex.DiscordConsumer do
     [%{value: address}] = data.options
 
     response =
-      case ListingProcess.read(address) do
-        %Centrex.Listings.Listing{
-          address: address,
-          price_history: [current_price | past_price],
-          links_history: [link | _]
-        } ->
-          "**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+      case Listings.search_listings(address) do
+        [] ->
+          "No listing found"
 
-        _ ->
-          "No listing found with address #{address}"
+        listings ->
+          Enum.reduce(listings, "Found #{Enum.count(listings)} listings\n", fn
+            %{
+              address: address,
+              price_history: [current_price | past_prices],
+              links_history: [latest_link | _]
+            },
+            acc ->
+              "#{acc}**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_prices, &", #{&1}$")} \nLatest link: #{latest_link}\n"
+          end)
       end
 
     Api.create_interaction_response(interaction, %{type: 4, data: %{content: response}})

@@ -2,6 +2,17 @@ defmodule Centrex.Listings do
   alias Centrex.Listings.Listing
   alias Centrex.Repo
 
+  import Ecto.Query, warn: false
+
+  def search_listings(address) do
+    like = "%#{address}%"
+    Repo.all(from l in Listing, where: ilike(l.address, ^like))
+  end
+
+  def get_listing(address) do
+    Repo.get(Listing, address)
+  end
+
   def track_listing(address, price, link, type) do
     %Listing{}
     |> Ecto.Changeset.cast(
@@ -17,10 +28,6 @@ defmodule Centrex.Listings do
     |> Ecto.Changeset.validate_required([:price_history, :links_history, :address, :type])
     |> Ecto.Changeset.unique_constraint(:address, name: :listings_pkey)
     |> Repo.insert()
-  end
-
-  def update_listing(%Listing{price_history: [price | _], links_history: [link | _]}, price, link) do
-    {:error, :no_change}
   end
 
   def update_listing(
