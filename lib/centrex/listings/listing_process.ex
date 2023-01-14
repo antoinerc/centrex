@@ -25,24 +25,9 @@ defmodule Centrex.Listings.ListingProcess do
     end
   end
 
-  @spec read(String.t()) :: Listing.t() | {:error, atom()}
-  def read(address) do
-    address
-    |> ListingRegistry.lookup_property()
-    |> case do
-      {:ok, pid} -> GenServer.call(pid, :read)
-      error -> error
-    end
-  end
-
   @impl true
   def init(%Listing{} = state) do
     {:ok, state}
-  end
-
-  @impl true
-  def handle_call(:read, _from, %Listing{} = state) do
-    {:reply, state, state}
   end
 
   @impl true
