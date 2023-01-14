@@ -30,10 +30,6 @@ defmodule Centrex.Listings do
     |> Repo.insert()
   end
 
-  def update_listing(%Listing{price_history: [price | _], links_history: [link | _]}, price, link) do
-    {:error, :no_change}
-  end
-
   def update_listing(
         %Listing{price_history: price_history, links_history: links_history} = listing,
         price,
