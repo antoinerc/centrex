@@ -51,7 +51,6 @@ config :phoenix, :json_library, Jason
 config :nostrum,
   token: System.get_env("CENTREX_SECRET")
 
-
 # Basic auth
 config :centrex, :basic_auth, username: "melonmiel", password: System.get_env("CENTREX_PASSWORD")
 

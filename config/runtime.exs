@@ -66,6 +66,11 @@ if config_env() == :prod do
   config :nostrum,
     token: System.get_env("CENTREX_SECRET")
 
+  # Basic auth
+  config :centrex, :basic_auth,
+    username: "melonmiel",
+    password: System.get_env("CENTREX_PASSWORD")
+
   # ## Configuring the mailer
   #
   # In production you need to configure the mailer to use a different adapter.
