@@ -1,5 +1,6 @@
 defmodule CentrexWeb.Router do
   use CentrexWeb, :router
+  import Plug.BasicAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -8,6 +9,7 @@ defmodule CentrexWeb.Router do
     plug :put_root_layout, {CentrexWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :basic_auth, Application.compile_env(:centrex, :basic_auth)
   end
 
   pipeline :api do
