@@ -7,6 +7,7 @@ defmodule Centrex.Listings.Listing do
     field(:type, :string)
     field(:price_history, {:array, :string})
     field(:links_history, {:array, :string})
+    field(:discord_thread, :integer, default: nil)
 
     timestamps()
   end

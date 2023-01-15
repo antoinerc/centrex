@@ -32,7 +32,7 @@ defmodule Centrex.DiscordConsumer do
     :noop
   end
 
-  defp manage_track_listing(%Struct.Interaction{data: data} = interaction) do
+  defp manage_track_listing(%Struct.Interaction{data: data, channel_id: channel_id} = interaction) do
     %{
       options: [
         %{name: "type", value: type},
@@ -42,25 +42,58 @@ defmodule Centrex.DiscordConsumer do
       ]
     } = data
 
-    response =
+    [discord_thread, response] =
       case Listings.get_listing(address) do
         %Listings.Listing{
           address: ^address,
           type: ^type,
-          price_history: [^price | past_price],
-          links_history: [^link | _]
+          price_history: [^price | _],
+          links_history: [^link | _],
+          discord_thread: discord_thread
         } ->
-          "Found an existing listing for\n**#{address}**\nPrice history: **#{price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+          discord_thread =
+            if is_nil(discord_thread) do
+              {:ok, %{id: thread_id}} =
+                Api.start_thread(channel_id, %{
+                  name: address,
+                  type: 11,
+                  auto_archive_duration: 10080
+                })
+
+              thread_id
+            else
+              discord_thread
+            end
+
+          [discord_thread, nil]
 
         %Listings.Listing{} = listing ->
           {:ok,
            %Listings.Listing{
              address: address,
              price_history: [current_price | past_price],
-             links_history: [link | _]
+             links_history: [link | _],
+             discord_thread: discord_thread
            }} = Listings.update_listing(listing, price, link)
 
-          "**UPDATED LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+          response =
+            "**UPDATED LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+
+          discord_thread =
+            if is_nil(discord_thread) do
+              {:ok, %{id: thread_id}} =
+                Api.start_thread(channel_id, %{
+                  name: address,
+                  type: 11,
+                  auto_archive_duration: 10080
+                })
+
+              thread_id
+            else
+              discord_thread
+            end
+
+          [discord_thread, response]
 
         nil ->
           {:ok,
@@ -68,12 +101,22 @@ defmodule Centrex.DiscordConsumer do
              address: address,
              price_history: [current_price | past_price],
              links_history: [link | _]
-           }} = Listings.track_listing(address, price, link, type)
+           } = listing} = Listings.track_listing(address, price, link, type)
 
-          "**NEW LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+          response =
+            "**NEW LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
+
+          {:ok, %{id: thread_id}} =
+            Api.start_thread(channel_id, %{name: address, type: 11, auto_archive_duration: 10080})
+          Listings.associate_discord_thread(listing, thread_id)
+
+          [thread_id, response]
       end
 
-    Api.create_interaction_response(interaction, %{type: 4, data: %{content: response}})
+    Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Here is your listing: #{%Struct.Channel{id: discord_thread}}"}})
+    if not is_nil(response) do
+      Api.create_message!(discord_thread, %{content: response})
+    end
   end
 
   defp manage_search_listing(%Struct.Interaction{data: data} = interaction) do
