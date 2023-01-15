@@ -51,10 +51,6 @@ config :phoenix, :json_library, Jason
 config :nostrum,
   token: System.get_env("CENTREX_SECRET")
 
-
-# Basic auth
-config :centrex, :basic_auth, username: "melonmiel", password: System.get_env("CENTREX_PASSWORD")
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
