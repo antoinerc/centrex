@@ -48,23 +48,9 @@ defmodule Centrex.DiscordConsumer do
           address: ^address,
           type: ^type,
           price_history: [^price | _],
-          links_history: [^link | _],
-          discord_thread: discord_thread
-        } ->
-          discord_thread =
-            if is_nil(discord_thread) do
-              {:ok, %{id: thread_id}} =
-                Api.start_thread(channel_id, %{
-                  name: address,
-                  type: 11,
-                  auto_archive_duration: 10080
-                })
-
-              thread_id
-            else
-              discord_thread
-            end
-
+          links_history: [^link | _]
+        } = listing ->
+          discord_thread = get_discord_thread(listing, channel_id)
           [discord_thread, nil]
 
         %Listings.Listing{} = listing ->
@@ -72,26 +58,13 @@ defmodule Centrex.DiscordConsumer do
            %Listings.Listing{
              address: address,
              price_history: [current_price | past_price],
-             links_history: [link | _],
-             discord_thread: discord_thread
-           }} = Listings.update_listing(listing, price, link)
+             links_history: [link | _]
+           } = listing} = Listings.update_listing(listing, price, link)
 
           response =
             "**UPDATED LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
 
-          discord_thread =
-            if is_nil(discord_thread) do
-              {:ok, %{id: thread_id}} =
-                Api.start_thread(channel_id, %{
-                  name: address,
-                  type: 11,
-                  auto_archive_duration: 10080
-                })
-
-              thread_id
-            else
-              discord_thread
-            end
+          discord_thread = get_discord_thread(listing, channel_id)
 
           [discord_thread, response]
 
@@ -108,12 +81,17 @@ defmodule Centrex.DiscordConsumer do
 
           {:ok, %{id: thread_id}} =
             Api.start_thread(channel_id, %{name: address, type: 11, auto_archive_duration: 10080})
+
           Listings.associate_discord_thread(listing, thread_id)
 
           [thread_id, response]
       end
 
-    Api.create_interaction_response(interaction, %{type: 4, data: %{content: "Here is your listing: #{%Struct.Channel{id: discord_thread}}"}})
+    Api.create_interaction_response(interaction, %{
+      type: 4,
+      data: %{content: "Here is your listing: #{%Struct.Channel{id: discord_thread}}"}
+    })
+
     if not is_nil(response) do
       Api.create_message!(discord_thread, %{content: response})
     end
@@ -140,5 +118,20 @@ defmodule Centrex.DiscordConsumer do
       end
 
     Api.create_interaction_response(interaction, %{type: 4, data: %{content: response}})
+  end
+
+  defp get_discord_thread(%Listings.Listing{discord_thread: nil, address: address}, channel_id) do
+    {:ok, %{id: thread}} =
+      Api.start_thread(channel_id, %{
+        name: address,
+        type: 11,
+        auto_archive_duration: 10080
+      })
+
+    thread
+  end
+
+  defp get_discord_thread(%Listings.Listing{discord_thread: thread}, _channel_id) do
+    thread
   end
 end
