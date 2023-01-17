@@ -4,7 +4,7 @@ defmodule Centrex.Discord.Channel do
 
   @primary_key {:type, :string, autogenerate: false}
   schema "channels" do
-    field(:channel_id, :float, default: nil)
+    field(:channel_id, :integer, default: nil)
     timestamps()
   end
 
@@ -12,7 +12,7 @@ defmodule Centrex.Discord.Channel do
   def changeset(channel, attrs) do
     channel
     |> cast(attrs, [:channel_id, :type])
-    |> validate_required([:id, :type])
+    |> validate_required([:channel_id, :type])
     |> unique_constraint(:type, name: :type_pkey)
   end
 end

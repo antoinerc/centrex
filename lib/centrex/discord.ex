@@ -3,102 +3,23 @@ defmodule Centrex.Discord do
   The Discord context.
   """
 
+  import Ecto.Changeset
   import Ecto.Query, warn: false
   alias Centrex.Repo
 
   alias Centrex.Discord.Channel
 
-  @doc """
-  Returns the list of channels.
-
-  ## Examples
-
-      iex> list_channels()
-      [%Channel{}, ...]
-
-  """
-  def list_channels do
-    Repo.all(Channel)
-  end
-
-  @doc """
-  Gets a single channel.
-
-  Raises `Ecto.NoResultsError` if the Channel does not exist.
-
-  ## Examples
-
-      iex> get_channel!(123)
-      %Channel{}
-
-      iex> get_channel!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_channel!(id), do: Repo.get!(Channel, id)
-
-  @doc """
-  Creates a channel.
-
-  ## Examples
-
-      iex> create_channel(%{field: value})
-      {:ok, %Channel{}}
-
-      iex> create_channel(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_channel(attrs \\ %{}) do
+  @spec set_channel(String.t(), Float.t()) :: {:ok, Channel.t()} | {:error, :reason}
+  def set_channel(type, channel_id) do
     %Channel{}
-    |> Channel.changeset(attrs)
+    |> cast(%{type: type, channel_id: channel_id}, [:type, :channel_id])
+    |> validate_required([:channel_id, :type])
+    |> unique_constraint(:type, name: :type_pkey)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a channel.
-
-  ## Examples
-
-      iex> update_channel(channel, %{field: new_value})
-      {:ok, %Channel{}}
-
-      iex> update_channel(channel, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_channel(%Channel{} = channel, attrs) do
-    channel
-    |> Channel.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a channel.
-
-  ## Examples
-
-      iex> delete_channel(channel)
-      {:ok, %Channel{}}
-
-      iex> delete_channel(channel)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_channel(%Channel{} = channel) do
-    Repo.delete(channel)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking channel changes.
-
-  ## Examples
-
-      iex> change_channel(channel)
-      %Ecto.Changeset{data: %Channel{}}
-
-  """
-  def change_channel(%Channel{} = channel, attrs \\ %{}) do
-    Channel.changeset(channel, attrs)
+  @spec get_by_channel(Integer.t()) :: Channel.t() | nil
+  def get_by_channel(channel_id) do
+    Repo.get_by(Channel, channel_id: channel_id)
   end
 end

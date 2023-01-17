@@ -4,7 +4,7 @@ defmodule Centrex.Repo.Migrations.CreateChannels do
   def change do
     create table(:channels, primary_key: false) do
       add :type, :string
-      add :id, :bigint
+      add :channel_id, :bigint
 
       timestamps()
     end
