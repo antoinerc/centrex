@@ -12,7 +12,6 @@ defmodule Centrex.DiscordConsumer do
 
   def handle_event({:READY, %{guilds: [guild]}, _ws_state}) do
     Api.bulk_overwrite_guild_application_commands(guild.id, Commands.all())
-    |> IO.inspect()
   end
 
   def handle_event(
@@ -79,6 +78,7 @@ defmodule Centrex.DiscordConsumer do
               "#{acc}**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_prices, &", #{&1}$")} \nLatest link: #{latest_link}\n"
           end)
       end
+
     reply_to_interaction(interaction, response)
   end
 
@@ -90,19 +90,12 @@ defmodule Centrex.DiscordConsumer do
     reply_to_interaction(interaction, "Channel type set")
   end
 
-  defp get_discord_thread(%Listings.Listing{discord_thread: nil, address: address}, channel_id) do
-    {:ok, %{id: thread}} =
-      Api.start_thread(channel_id, %{
-        name: address,
-        type: 11,
-        auto_archive_duration: 10080
-      })
-
-    thread
+  defp get_discord_thread(%Listings.Listing{discord_thread: nil} = listing, interaction) do
+    start_thread(interaction, listing)
   end
 
-  defp get_discord_thread(%Listings.Listing{discord_thread: thread}, _channel_id) do
-    thread
+  defp get_discord_thread(%Listings.Listing{discord_thread: thread}, _interaction) do
+    {:ok, thread}
   end
 
   defp parse_options(
@@ -133,7 +126,6 @@ defmodule Centrex.DiscordConsumer do
          ],
          _
        ) do
-       IO.inspect(type)
     {:ok, %{address: address, price: price, link: link, type: type}}
   end
 
@@ -155,21 +147,20 @@ defmodule Centrex.DiscordConsumer do
     response =
       "**NEW LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
 
-    {:ok, %{id: thread_id}} =
-      Api.start_thread(interaction.channel_id, %{
-        name: address,
-        type: 11,
-        auto_archive_duration: 10080
-      })
+    case get_discord_thread(listing, interaction) do
+      {:ok, thread_id} ->
+        reply_to_interaction(
+          interaction,
+          "Here is your listing: #{%Struct.Channel{id: thread_id}}"
+        )
 
-    Listings.associate_discord_thread(listing, thread_id)
+        Api.create_message!(thread_id, %{content: response})
 
-    reply_to_interaction(
-      interaction,
-      "Here is your listing: #{%Struct.Channel{id: thread_id}}"
-    )
-
-    Api.create_message!(thread_id, %{content: response})
+      {:error, error} ->
+        Api.create_message!(interaction.channel_id, %{
+          content: "[error] Unable to create thread, reason: #{inspect(error)}"
+        })
+    end
   end
 
   defp manage_existing_listing(
@@ -177,12 +168,18 @@ defmodule Centrex.DiscordConsumer do
          %{price: new_price, link: new_link},
          interaction
        ) do
-    discord_thread = get_discord_thread(listing, interaction.channel_id)
+    case get_discord_thread(listing, interaction) do
+      {:ok, discord_thread} ->
+        reply_to_interaction(
+          interaction,
+          "Here is your listing: #{%Struct.Channel{id: discord_thread}}"
+        )
 
-    reply_to_interaction(
-      interaction,
-      "Here is your listing: #{%Struct.Channel{id: discord_thread}}"
-    )
+      {:error, error} ->
+        Api.create_message!(interaction.channel_id, %{
+          content: "[error] Unable to create thread, reason: #{inspect(error)}"
+        })
+    end
   end
 
   defp manage_existing_listing(listing, %{price: new_price, link: new_link}, interaction) do
@@ -193,13 +190,36 @@ defmodule Centrex.DiscordConsumer do
     response =
       "**UPDATED LISTING**\n**#{address}**\nPrice history: **#{current_price}$**#{Enum.map(past_price, &", #{&1}$")} \nLatest link: #{link}\n"
 
-    discord_thread = get_discord_thread(listing, interaction.channel_id)
+    case get_discord_thread(listing, interaction) do
+      {:ok, discord_thread} ->
+        reply_to_interaction(
+          interaction,
+          "Here is your listing: #{%Struct.Channel{id: discord_thread}}"
+        )
 
-    reply_to_interaction(
-      interaction,
-      "Here is your listing: #{%Struct.Channel{id: discord_thread}}"
-    )
+        Api.create_message!(discord_thread, %{content: response})
 
-    Api.create_message!(discord_thread, %{content: response})
+      {:error, error} ->
+        Api.create_message!(interaction.channel_id, %{
+          content: "[error] Unable to create thread, reason: #{inspect(error)}"
+        })
+    end
+  end
+
+  defp start_thread(%{guild_id: guild_id, channel_id: channel_id}, listing) do
+    with {:ok, %{id: thread_id}} <-
+           Api.start_thread(channel_id, %{
+             name: listing.address,
+             type: 11,
+             auto_archive_duration: 10080
+           }),
+         {:ok, members} <- Api.list_guild_members(guild_id),
+         :ok <- Enum.each(members, &Api.add_thread_member(thread_id, &1.user.id)),
+         {:ok, _} <- Listings.associate_discord_thread(listing, thread_id) do
+      {:ok, thread_id}
+    else
+      error ->
+        error
+    end
   end
 end
