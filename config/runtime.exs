@@ -65,11 +65,7 @@ if config_env() == :prod do
 
   config :nostrum,
     token: System.get_env("CENTREX_SECRET"),
-    gateway_intents: [
-      :guilds,
-      :guild_members,
-      :guild_messages
-    ]
+    gateway_intents: :all
 
   # ## Configuring the mailer
   #

@@ -106,13 +106,13 @@ defmodule Centrex.DiscordConsumer do
          ],
          channel_id
        ) do
-    %{type: type} = Centrex.Discord.get_by_channel(channel_id)
+    type = Centrex.Discord.get_by_channel(channel_id)
 
     case type do
       nil ->
         {:error, :type_inferance_error}
 
-      type ->
+      %{type: type} ->
         {:ok, %{address: address, price: price, link: link, type: type}}
     end
   end
@@ -213,7 +213,7 @@ defmodule Centrex.DiscordConsumer do
              type: 11,
              auto_archive_duration: 10080
            }),
-         {:ok, members} <- Api.list_guild_members(guild_id),
+         {:ok, members} <- Api.list_guild_members(guild_id, limit: 5),
          :ok <- Enum.each(members, &Api.add_thread_member(thread_id, &1.user.id)),
          {:ok, _} <- Listings.associate_discord_thread(listing, thread_id) do
       {:ok, thread_id}
