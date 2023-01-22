@@ -49,7 +49,12 @@ config :phoenix, :json_library, Jason
 
 # Token for the Discord API
 config :nostrum,
-  token: System.get_env("CENTREX_SECRET")
+  token: System.get_env("CENTREX_SECRET"),
+  gateway_intents: [
+    :guilds,
+    :guild_members,
+    :guild_messages
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

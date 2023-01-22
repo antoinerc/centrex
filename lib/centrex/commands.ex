@@ -5,13 +5,6 @@ defmodule Centrex.Commands do
     options: [
       %{
         type: 3,
-        name: "type",
-        description: "whether it's a house or a condo",
-        required: true,
-        choices: [%{name: "house", value: "house"}, %{name: "condo", value: "condo"}]
-      },
-      %{
-        type: 3,
         name: "address",
         description: "address of property",
         required: true
@@ -27,6 +20,13 @@ defmodule Centrex.Commands do
         name: "link",
         description: "link to listing",
         required: true
+      },
+      %{
+        type: 3,
+        name: "type",
+        description: "whether it's a house or a condo",
+        required: false,
+        choices: [%{name: "house", value: "house"}, %{name: "condo", value: "condo"}]
       }
     ]
   }
@@ -44,7 +44,21 @@ defmodule Centrex.Commands do
     ]
   }
 
+  @set_channel %{
+    name: "set_channel",
+    description: "associate the channel type with the channel name",
+    options: [
+      %{
+        type: 3,
+        name: "type",
+        description: "whether it's a house or a condo",
+        required: true,
+        choices: [%{name: "house", value: "house"}, %{name: "condo", value: "condo"}]
+      }
+    ]
+  }
+
   def all do
-    [@add, @search]
+    [@add, @search, @set_channel]
   end
 end

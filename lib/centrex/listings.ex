@@ -3,6 +3,7 @@ defmodule Centrex.Listings do
   alias Centrex.Repo
 
   import Ecto.Query, warn: false
+  import Ecto.Changeset
 
   def search_listings(address) do
     like = "%#{address}%"
@@ -15,7 +16,7 @@ defmodule Centrex.Listings do
 
   def track_listing(address, price, link, type) do
     %Listing{}
-    |> Ecto.Changeset.cast(
+    |> cast(
       %{
         "address" => address,
         "price_history" => [price],
@@ -25,8 +26,8 @@ defmodule Centrex.Listings do
       [:price_history, :links_history, :address, :type],
       empty_value: ["", []]
     )
-    |> Ecto.Changeset.validate_required([:price_history, :links_history, :address, :type])
-    |> Ecto.Changeset.unique_constraint(:address, name: :listings_pkey)
+    |> validate_required([:price_history, :links_history, :address, :type])
+    |> unique_constraint(:address, name: :listings_pkey)
     |> Repo.insert()
   end
 
@@ -41,12 +42,19 @@ defmodule Centrex.Listings do
       |> add_link(links_history, link)
 
     listing
-    |> Ecto.Changeset.cast(
+    |> cast(
       changes,
       [:price_history, :links_history]
     )
-    |> Ecto.Changeset.validate_required([:price_history, :links_history, :address, :type])
-    |> Ecto.Changeset.unique_constraint(:address, name: :listings_pkey)
+    |> validate_required([:price_history, :links_history, :address, :type])
+    |> unique_constraint(:address, name: :listings_pkey)
+    |> Repo.update()
+  end
+
+  def associate_discord_thread(%Listing{} = listing, discord_thread) do
+    listing
+    |> cast(%{discord_thread: discord_thread}, [:discord_thread])
+    |> unique_constraint(:discord_thread)
     |> Repo.update()
   end
 
