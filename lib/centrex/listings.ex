@@ -24,7 +24,9 @@ defmodule Centrex.Listings do
           | {:updated, %Listing{}}
           | {:ok, %Listing{}}
           | {:error, Ecto.Changeset.t()}
-  def track_listing(%{address: address, price: price, link: link, type: type}) do
+  def track_listing(%{address: address, price: price, link: link, type: type} = params) do
+    %{params | price: String.replace(price, "$", "")}
+
     case get_listing(address) do
       nil -> track_new_listing(address, price, link, type)
       %{price_history: [^price | _], links_history: [^link | _]} = listing -> {:ok, listing}
