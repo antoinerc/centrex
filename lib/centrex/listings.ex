@@ -14,7 +14,27 @@ defmodule Centrex.Listings do
     Repo.get(Listing, address)
   end
 
-  def track_listing(address, price, link, type) do
+  @spec track_listing(%{
+          address: String.t(),
+          price: String.t(),
+          link: String.t(),
+          type: String.t()
+        }) ::
+          {:new, %Listing{}}
+          | {:updated, %Listing{}}
+          | {:ok, %Listing{}}
+          | {:error, Ecto.Changeset.t()}
+  def track_listing(%{address: address, price: price, link: link, type: type} = params) do
+    %{params | price: String.replace(price, "$", "")}
+
+    case get_listing(address) do
+      nil -> track_new_listing(address, price, link, type)
+      %{price_history: [^price | _], links_history: [^link | _]} = listing -> {:ok, listing}
+      listing -> update_listing(listing, price, link)
+    end
+  end
+
+  defp track_new_listing(address, price, link, type) do
     %Listing{}
     |> cast(
       %{
@@ -29,6 +49,10 @@ defmodule Centrex.Listings do
     |> validate_required([:price_history, :links_history, :address, :type])
     |> unique_constraint(:address, name: :listings_pkey)
     |> Repo.insert()
+    |> case do
+      {:ok, listing} -> {:new, listing}
+      error -> error
+    end
   end
 
   def update_listing(
@@ -49,6 +73,10 @@ defmodule Centrex.Listings do
     |> validate_required([:price_history, :links_history, :address, :type])
     |> unique_constraint(:address, name: :listings_pkey)
     |> Repo.update()
+    |> case do
+      {:ok, listing} -> {:updated, listing}
+      error -> error
+    end
   end
 
   def associate_discord_thread(%Listing{} = listing, discord_thread) do

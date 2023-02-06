@@ -58,7 +58,20 @@ defmodule Centrex.Commands do
     ]
   }
 
+  @scan %{
+    name: "scan",
+    description: "scan a URL for listing informations",
+    options: [
+      %{
+        type: 3,
+        name: "link",
+        description: "link of listing",
+        required: true
+      }
+    ]
+  }
+
   def all do
-    [@add, @search, @set_channel]
+    [@add, @search, @set_channel, @scan]
   end
 end
