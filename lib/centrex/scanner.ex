@@ -25,6 +25,7 @@ defmodule Centrex.Scanner do
     scanner =
       case get_provider(url) do
         "centris" -> Scanners.CentrisScanner
+        "duproprio" -> Scanners.DuproprioScanner
         provider -> raise ArgumentError, message: "Unrecognized provider #{provider}"
       end
 
@@ -37,7 +38,7 @@ defmodule Centrex.Scanner do
   end
 
   defp get_provider(url) do
-    case Regex.run(~r/www\.([a-z]*).[a-z]*/, url) do
+    case Regex.run(~r/https:\/\/w*\.?([a-z]*).[a-z]*/, url) do
       [_, provider] -> provider
       nil -> raise ArgumentError, message: "Invalid URL format"
     end
