@@ -13,6 +13,6 @@ defmodule Centrex.Discord.Channel do
     channel
     |> cast(attrs, [:channel_id, :type])
     |> validate_required([:channel_id, :type])
-    |> unique_constraint(:type, name: :type_pkey)
+    |> unique_constraint(:type)
   end
 end
