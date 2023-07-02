@@ -21,8 +21,8 @@ defmodule Centrex.Scanners.CentrisScanner do
     |> Floki.find("span#BuyPrice")
     |> List.first()
     |> Floki.text()
-    |> String.trim()
     |> String.replace("$", "")
+    |> String.trim()
   end
 
   defp get_type(type) do

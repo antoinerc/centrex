@@ -54,6 +54,26 @@ defmodule Centrex.Commands do
         description: "whether it's a house or a condo",
         required: true,
         choices: [%{name: "house", value: "house"}, %{name: "condo", value: "condo"}]
+      },
+      %{
+        type: 3,
+        name: "channel_id",
+        description: "specify the channel id, if missing the current channel will be used",
+        required: false
+      }
+    ]
+  }
+
+  @unset_channel %{
+    name: "unset_channel",
+    description: "free the channel type from the currently associated channel",
+    options: [
+      %{
+        type: 3,
+        name: "type",
+        description: "whether it's a house or a condo",
+        required: true,
+        choices: [%{name: "house", value: "house"}, %{name: "condo", value: "condo"}]
       }
     ]
   }
@@ -72,6 +92,6 @@ defmodule Centrex.Commands do
   }
 
   def all do
-    [@add, @search, @set_channel, @scan]
+    [@add, @search, @set_channel, @unset_channel, @scan]
   end
 end

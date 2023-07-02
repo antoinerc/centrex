@@ -22,8 +22,8 @@ defmodule Centrex.Scanners.DuproprioScanner do
     |> Floki.find("div.listing-price__amount")
     |> List.first()
     |> Floki.text()
-    |> String.trim()
     |> String.replace("$", "")
+    |> String.trim()
   end
 
   defp get_type(type) do

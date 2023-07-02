@@ -1,11 +1,11 @@
 defmodule Centrex.Scanner do
   alias Centrex.Scanners
 
-  @spec scan(url :: String.t()) :: %{
-          address: String.t(),
-          type: String.t(),
-          price: String.t(),
-          link: String.t()
+  @spec scan(String.t()) :: %{
+          String.t() => String.t(),
+          String.t() => String.t(),
+          String.t() => String.t(),
+          String.t() => String.t()
         }
   def scan(url) do
     url
@@ -30,10 +30,10 @@ defmodule Centrex.Scanner do
       end
 
     %{
-      address: scanner.get_address_from_page(parsed_page),
-      type: scanner.get_type_from_page(parsed_page),
-      price: scanner.get_price_from_page(parsed_page),
-      link: url
+      "address" => scanner.get_address_from_page(parsed_page),
+      "price" => scanner.get_price_from_page(parsed_page),
+      "link" => url,
+      "type" => scanner.get_type_from_page(parsed_page)
     }
   end
 

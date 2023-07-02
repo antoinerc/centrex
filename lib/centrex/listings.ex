@@ -15,18 +15,16 @@ defmodule Centrex.Listings do
   end
 
   @spec track_listing(%{
-          address: String.t(),
-          price: String.t(),
-          link: String.t(),
-          type: String.t()
+          String.t() => String.t(),
+          String.t() => String.t(),
+          String.t() => String.t(),
+          String.t() => String.t()
         }) ::
           {:new, %Listing{}}
           | {:updated, %Listing{}}
           | {:ok, %Listing{}}
           | {:error, Ecto.Changeset.t()}
-  def track_listing(%{address: address, price: price, link: link, type: type} = params) do
-    %{params | price: String.replace(price, "$", "")}
-
+  def track_listing(%{"address" => address, "price" => price, "link" => link, "type" => type}) do
     case get_listing(address) do
       nil -> track_new_listing(address, price, link, type)
       %{price_history: [^price | _], links_history: [^link | _]} = listing -> {:ok, listing}
